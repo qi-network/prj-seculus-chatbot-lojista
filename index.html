@@ -1,199 +1,237 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Atendimento de Produtos – Seculus</title>
 
-  <!-- Chat Messenger -->
+  <!-- Dialogflow Messenger (Agent Builder) -->
   <link rel="stylesheet" href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
     :root{
-      --brand-primary: #c62828; /* vermelho principal */
-      --brand-secondary: #000000; /* preto */
-      --brand-background: #fafafa;
-      --bot-bubble: #ffffff;
-      --user-bubble: #fdecea;
-      --whatsapp-green: #25D366;
-      --whatsapp-green-hover:#20ba5a;
+      --seculus-red-700:#7d0b0b;
+      --seculus-red-600:#9d1010;
+      --seculus-red-500:#b11414;
+      --seculus-red-400:#c21b1b;
+      --bg-1:#ffffff;
+      --bg-2:#f7f7f7;
+      --text-1:#111;
+      --text-2:#444;
+      --accent:#1db954; /* verde do botão WhatsApp */
     }
 
-    body{
-      margin: 0;
-      font-family: "Google Sans", Arial, sans-serif;
-      background: var(--brand-background);
-      color: #000;
-    }
+    /* Reset simples */
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; background:var(--bg-1); color:var(--text-1); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
 
-    /* Barra superior com logo e nome */
-    .brand-bar{
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      background: linear-gradient(90deg, var(--brand-secondary), var(--brand-primary));
-      padding: 12px 20px;
-      color: white;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    /* Topbar */
+    .topbar{
+      background: linear-gradient(90deg, var(--seculus-red-700), var(--seculus-red-500));
+      color:#fff;
+      padding:12px 18px;
+      border-bottom:1px solid rgba(255,255,255,.08);
     }
+    .brand{ display:flex; align-items:center; gap:12px; }
     .brand-logo{
-      height: 40px;
-      width: auto;
+      height:36px; width:auto; object-fit:contain;
+      display:block; filter: drop-shadow(0 0 0 transparent);
     }
-    .brand-title{
-      display: flex;
-      flex-direction: column;
+    .brand-text h1{
+      font-size:20px; line-height:1.2; margin:0; font-weight:700; letter-spacing:.2px;
     }
-    .brand-title .big{
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: .3px;
-    }
-    .brand-title .small{
-      opacity: 0.9;
-      font-size: 13px;
+    .brand-text p{
+      margin:2px 0 0; font-size:12px; opacity:.85;
     }
 
-    /* Conteúdo principal */
-    .content{
-      text-align: center;
-      margin-top: 40px;
+    /* Layout */
+    .wrap{
+      display:grid;
+      grid-template-columns: minmax(0,1fr) 420px;
+      gap:16px;
+      height:calc(100vh - 60px);
     }
-    h1{
-      color: var(--brand-secondary);
-      margin-bottom: 8px;
-      font-size: 26px;
-    }
-    h2{
-      color: var(--brand-primary);
-      font-weight: 500;
-      font-size: 18px;
-      margin-bottom: 24px;
-    }
-
-    /* Chat fixo à direita */
-    df-messenger{
-      z-index: 999;
-      position: fixed;
-      --df-messenger-font-color: #000;
-      --df-messenger-font-family: Google Sans, Arial, sans-serif;
-      --df-messenger-chat-background: #f3f6fc;
-      --df-messenger-message-user-background: var(--user-bubble);
-      --df-messenger-message-bot-background: var(--bot-bubble);
-      bottom: 0;
-      right: 0;
-      top: 60px;
-      width: 380px;
-      border-left: 2px solid var(--brand-primary);
-    }
-
-    /* Botão do WhatsApp */
-    .whatsapp-button{
-      display: none;
-      align-items: center;
-      gap: 10px;
-      background-color: var(--whatsapp-green);
-      color: #fff;
-      border: none;
-      border-radius: 999px;
-      padding: 14px 18px;
-      font-size: 15px;
-      cursor: pointer;
-      position: fixed;
-      bottom: 24px;
-      right: 400px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      transition: transform .2s ease, box-shadow .2s ease;
-    }
-    .whatsapp-button:hover{
-      background-color: var(--whatsapp-green-hover);
-      transform: scale(1.05);
-    }
-    .wa-dot{
-      width:10px; height:10px; background:#fff; border-radius:50%;
-    }
-
     @media (max-width: 980px){
-      df-messenger{ width: 100%; right: 0; }
-      .whatsapp-button{ right: 20px; }
+      .wrap{ grid-template-columns: 1fr; height:auto; }
+      .right{ position:relative; height:70vh; }
     }
+
+    .left{
+      padding:32px 24px 96px;
+      background:var(--bg-1);
+    }
+    .right{
+      border-left:3px solid var(--seculus-red-400);
+      background:var(--bg-2);
+      padding:0;
+      display:flex; align-items:stretch; justify-content:stretch;
+    }
+
+    .hero-title{
+      text-align:center; margin:30px 0 8px; font-weight:800; letter-spacing:.2px;
+      background:linear-gradient(90deg,#111,#333); -webkit-background-clip:text; background-clip:text; color:transparent;
+      font-size:32px;
+    }
+    .hero-sub{
+      text-align:center; color:var(--text-2); font-size:18px; margin:0 0 24px;
+    }
+
+    /* df-messenger lado direito */
+    df-messenger{
+      --df-messenger-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --df-messenger-font-color: #111;
+      --df-messenger-chat-background: #f5f7fb;
+      --df-messenger-message-user-background: #ffe5e5;      /* bolha do usuário (tom rosado) */
+      --df-messenger-message-bot-background: #fff;
+      --df-messenger-send-icon-color: var(--seculus-red-500);
+      --df-messenger-input-placeholder-color:#888;
+      --df-messenger-chip-border-color:#eee;
+      width:100%;
+      max-width:100%;
+      height:100%;
+      border:none;
+    }
+    df-messenger .df-titlebar{
+      background:#fff !important;
+      border-bottom:1px solid #eee !important;
+      color:#111 !important;
+    }
+
+    /* Botão flutuante do WhatsApp (oculto inicialmente) */
+    .wapp-fab{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 24px;
+      z-index: 50;
+      display:none; /* aparece via JS */
+    }
+    .wapp-fab button{
+      display:flex; align-items:center; gap:10px;
+      background:var(--accent);
+      color:#fff; font-weight:700;
+      border:none; border-radius:999px;
+      padding:14px 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+    .wapp-fab button:hover{
+      transform: translateX(-0%) translateY(-2px);
+      box-shadow: 0 14px 36px rgba(0,0,0,.22);
+    }
+    .wapp-dot{
+      width:10px; height:10px; border-radius:50%;
+      background:#eaffea; display:inline-block;
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,.08);
+    }
+
+    /* container do chat para ocupar tudo na direita */
+    .chat-holder{ width:100%; height:100%; }
   </style>
 </head>
+
 <body>
-
-  <!-- Barra superior -->
-  <div class="brand-bar">
-    <img src="./42440c46-eb43-4788-a76f-c65ddff9546b.png" alt="Logo Seculus" class="brand-logo">
-    <div class="brand-title">
-      <span class="big">Atendimento de Produtos – Seculus</span>
-      <span class="small">Suporte ao lojista • Atendimento especializado</span>
+  <!-- TOPO -->
+  <header class="topbar">
+    <div class="brand">
+      <!-- usa a imagem que você subiu na raiz do repo -->
+      <img src="logo-seculus.png" alt="Logo Seculus" class="brand-logo" />
+      <div class="brand-text">
+        <h1>Atendimento de Produtos – Seculus</h1>
+        <p>Suporte ao lojista • Atendimento especializado</p>
+      </div>
     </div>
+  </header>
+
+  <!-- CONTEÚDO -->
+  <main class="wrap">
+    <section class="left">
+      <h2 class="hero-title">Bem-vindo(a)!</h2>
+      <p class="hero-sub">Converse com o nosso assistente virtual ou fale com um atendente humano.</p>
+      <!-- aqui você pode inserir conteúdo institucional, FAQ, links úteis, etc. -->
+    </section>
+
+    <aside class="right">
+      <div class="chat-holder">
+        <!-- Widget do Agent Builder -->
+        <df-messenger
+          location="us-central1"
+          project-id="mkt-produtos"
+          agent-id="5c38df6c-f343-4582-8e60-790f5d75ce42"
+          language-code="pt-br"
+          max-query-length="-1">
+          <df-messenger-chat chat-title="Atendimento de Produtos Lojista"></df-messenger-chat>
+        </df-messenger>
+      </div>
+    </aside>
+  </main>
+
+  <!-- BOTÃO WHATSAPP (inicialmente oculto) -->
+  <div class="wapp-fab" id="whatsappBtn">
+    <button type="button" onclick="window.open('https://wa.me/5511999999999?text=Ol%C3%A1%2C%20preciso%20falar%20com%20um%20atendente%20humano','_blank')">
+      <span class="wapp-dot"></span>
+      Falar com um atendente via WhatsApp
+    </button>
   </div>
-
-  <!-- Conteúdo -->
-  <div class="content">
-    <h1>Bem-vindo(a)!</h1>
-    <h2>Converse com o nosso assistente virtual ou fale com um atendente humano.</h2>
-  </div>
-
-  <!-- Botão WhatsApp -->
-  <button
-    id="wa-btn"
-    class="whatsapp-button"
-    onclick="window.open('https://wa.me/5511999999999?text=Ol%C3%A1%20preciso%20de%20atendimento%20humano', '_blank')">
-    <span class="wa-dot"></span>
-    Falar com um atendente via WhatsApp
-  </button>
-
-  <!-- Chat -->
-  <df-messenger
-    location="us-central1"
-    project-id="mkt-produtos"
-    agent-id="5c38df6c-f343-4582-8e60-790f5d75ce42"
-    language-code="pt-br"
-    max-query-length="-1">
-    <df-messenger-chat chat-title="Atendimento de Produtos Lojista"></df-messenger-chat>
-  </df-messenger>
 
   <script>
-    const messenger = document.querySelector('df-messenger');
-    const waBtn = document.getElementById('wa-btn');
-    const FALLBACK_AFTER_BOT_REPLIES = 4;
-    let botReplyCount = 0;
+    /**
+     * Mostra o botão do WhatsApp quando:
+     *  - O usuário ou o bot mencionarem “WhatsApp”, “atendente humano”, “falar com alguém”, etc.
+     * Essa é uma heurística simples. Se você já envia um "custom payload" com uma frase específica,
+     * pode melhorar o selector abaixo para procurar por esse marcador/termo exato.
+     */
+    (function enableSmartWhatsAppButton(){
+      const btn = document.getElementById('whatsappBtn');
+      const df = document.querySelector('df-messenger');
+      if(!df) return;
 
-    function getResponseMessages(detail) {
-      const r = detail?.response || {};
-      const qr = r.queryResult || {};
-      return qr.responseMessages || qr.fulfillmentMessages || [];
-    }
+      // Tenta observar o shadowRoot do df-messenger (mensagens)
+      function tryObserve(){
+        const root = df.shadowRoot || df;
+        if(!root){
+          requestAnimationFrame(tryObserve);
+          return;
+        }
 
-    function payloadWantsWhatsapp(messages) {
-      for (const m of messages) {
-        if (m.payload && (m.payload.show_whatsapp === true)) return true;
-        const fields = m.payload?.fields;
-        if (fields && fields.show_whatsapp && fields.show_whatsapp.boolValue === true) return true;
-        const textArray = m.text?.text || m.text?.texts || [];
-        if (Array.isArray(textArray) && textArray.some(t => t && t.includes('[SHOW_WHATSAPP]'))) return true;
+        // Dentro do shadowRoot, o histórico fica dentro de 'df-messenger-chat'
+        const chat = root.querySelector('df-messenger-chat');
+        if(!chat){
+          requestAnimationFrame(tryObserve);
+          return;
+        }
+        const chatRoot = chat.shadowRoot || chat;
+        const transcript = chatRoot && chatRoot.querySelector('.message-list, .scroll-container, .df-message-list, .df-chat') || chatRoot;
+
+        if(!transcript){
+          requestAnimationFrame(tryObserve);
+          return;
+        }
+
+        const triggerRegex = /(whatsapp|atendente humano|falar com alguém|falar com um humano|falar com um atendente)/i;
+
+        const check = () => {
+          const text = transcript.textContent || '';
+          if(triggerRegex.test(text)){
+            btn.style.display = 'block';
+          }
+        };
+
+        // Observa mudanças no DOM do chat para decidir quando mostrar o botão
+        const mo = new MutationObserver(() => check());
+        mo.observe(transcript, { childList:true, subtree:true, characterData:true });
+
+        // Checagem inicial
+        check();
       }
-      return false;
-    }
 
-    messenger.addEventListener('df-response-received', (e) => {
-      const messages = getResponseMessages(e.detail);
-      botReplyCount++;
-
-      if (payloadWantsWhatsapp(messages)) {
-        waBtn.style.display = 'inline-flex';
-        return;
-      }
-      if (botReplyCount >= FALLBACK_AFTER_BOT_REPLIES) {
-        waBtn.style.display = 'inline-flex';
-      }
-    });
+      tryObserve();
+    })();
   </script>
 </body>
 </html>
+
 
 
