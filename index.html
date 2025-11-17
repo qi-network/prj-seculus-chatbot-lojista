@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Atendimento de Produtos – Seculus</title>
 
-  <!-- Estilos do Dialogflow Messenger -->
+  <!-- Dialogflow/Agent Builder Messenger -->
   <link rel="stylesheet" href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
+    :root { --brand-green: #25D366; --brand-green-hover:#20ba5a; }
+
     body {
       margin: 0;
       font-family: "Google Sans", Arial, sans-serif;
@@ -22,18 +24,10 @@
       flex-direction: column;
     }
 
-    h1 {
-      font-size: 24px;
-      margin-bottom: 10px;
-    }
+    h1 { font-size: 24px; margin-bottom: 10px; }
+    h2 { font-size: 18px; margin-bottom: 20px; color: #444; }
 
-    h2 {
-      font-size: 18px;
-      margin-bottom: 20px;
-      color: #444;
-    }
-
-    /* Estilo do componente do chat */
+    /* chat fixo à direita */
     df-messenger {
       z-index: 999;
       position: fixed;
@@ -49,9 +43,12 @@
       border-left: 1px solid #ccc;
     }
 
-    /* Botão do WhatsApp */
+    /* botão do WhatsApp (inicia escondido) */
     .whatsapp-button {
-      background-color: #25D366;
+      display: none;                /* ← escondido por padrão */
+      align-items: center;
+      gap: 8px;
+      background-color: var(--brand-green);
       color: white;
       border: none;
       border-radius: 8px;
@@ -66,11 +63,9 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       transition: all 0.3s ease;
     }
+    .whatsapp-button:hover { background-color: var(--brand-green-hover); transform: scale(1.05); }
 
-    .whatsapp-button:hover {
-      background-color: #20ba5a;
-      transform: scale(1.05);
-    }
+    .dot { width:8px; height:8px; background:#fff; border-radius:50%; display:inline-block; }
   </style>
 </head>
 
@@ -78,11 +73,14 @@
   <h1>Atendimento de Produtos – Seculus</h1>
   <h2>Atendimento de Produtos Lojista</h2>
 
-  <!-- Botão flutuante do WhatsApp -->
+  <!-- Botão do WhatsApp (aparece só quando o agente mandar ou no fallback) -->
   <button
+    id="wa-btn"
     class="whatsapp-button"
+    title="Falar com um atendente via WhatsApp"
     onclick="window.open('https://wa.me/5511999999999?text=Ol%C3%A1%20preciso%20de%20atendimento%20humano', '_blank')">
-    💬 Falar com um atendente via WhatsApp
+    <span class="dot"></span>
+    Falar com um atendente via WhatsApp
   </button>
 
   <!-- Chat do Agent Builder -->
@@ -94,12 +92,58 @@
     max-query-length="-1">
     <df-messenger-chat chat-title="Atendimento de Produtos Lojista"></df-messenger-chat>
   </df-messenger>
+
+  <script>
+    // Elementos
+    const messenger = document.querySelector('df-messenger');
+    const waBtn     = document.getElementById('wa-btn');
+
+    // Fallback: mostra o botão após N respostas do bot (caso o payload não venha)
+    const FALLBACK_AFTER_BOT_REPLIES = 4;
+    let botReplyCount = 0;
+
+    // Tenta extrair mensagens tanto de CX quanto de versões diferentes do messenger
+    function getResponseMessages(detail) {
+      // Conversational Agents (CX) costuma expor em queryResult.responseMessages
+      const r = detail?.response || {};
+      const qr = r.queryResult || {};
+      return qr.responseMessages || qr.fulfillmentMessages || [];
+    }
+
+    // Verifica se há um payload com show_whatsapp = true ou um marcador de texto
+    function payloadWantsWhatsapp(messages) {
+      for (const m of messages) {
+        // CX: m.payload pode vir como objeto puro…
+        if (m.payload && (m.payload.show_whatsapp === true)) return true;
+
+        // …ou com o formato via proto (fields)
+        const fields = m.payload?.fields;
+        if (fields && fields.show_whatsapp && fields.show_whatsapp.boolValue === true) return true;
+
+        // Marcador de texto opcional: [SHOW_WHATSAPP]
+        const textArray = m.text?.text || m.text?.texts || [];
+        if (Array.isArray(textArray) && textArray.some(t => t && t.includes('[SHOW_WHATSAPP]'))) return true;
+      }
+      return false;
+    }
+
+    // Evento disparado sempre que o bot envia uma resposta
+    messenger.addEventListener('df-response-received', (e) => {
+      const messages = getResponseMessages(e.detail);
+      botReplyCount++;
+
+      // 1) Caminho “oficial”: payload do agente
+      if (payloadWantsWhatsapp(messages)) {
+        waBtn.style.display = 'inline-flex';
+        return;
+      }
+
+      // 2) Fallback: depois de N respostas sem resolver, ofereça WhatsApp
+      if (botReplyCount >= FALLBACK_AFTER_BOT_REPLIES) {
+        waBtn.style.display = 'inline-flex';
+      }
+    });
+  </script>
 </body>
 </html>
 
-
-
-  <!-- Fallback: também mostre um botão clicável (caso popup seja bloqueado) -->
-  <!-- No seu Playbook, mantenha o payload do botão "💬 Falar com o suporte via WhatsApp" -->
-</body>
-</html>
